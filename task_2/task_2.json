@@ -1,0 +1,536 @@
+{
+  "name": "task_2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-2/duplicate-check",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3207a827-a72e-43ca-8a14-93594ad33feb",
+      "name": "Webhook",
+      "webhookId": "aa456932-2c29-42d8-be1f-bfed629e65d5"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7521edfb-bbad-4541-81dc-3bf47600377d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cbe07712-a51a-4998-82a8-c2957c426982",
+              "name": "email_normalized",
+              "value": "={{ $json.Email.toLowerCase().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "23f228d6-c5eb-40ed-88e9-6ceac3249288",
+              "name": "phone_normalized",
+              "value": "={{ (() => {\n  const raw = String($json.Phone ?? '').trim();\n  const digits = raw.replace(/\\D/g, '');\n\n  let mobile;\n\n  if (/^[6-9]\\d{9}$/.test(digits)) {\n    mobile = digits;\n  } else if (/^91[6-9]\\d{9}$/.test(digits)) {\n    mobile = digits.slice(2);\n  } else {\n    return null;\n  }\n\n  return `+91-${mobile}`;\n})() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -64
+      ],
+      "id": "02da4cd2-9be6-4e7d-bae2-94dc846ade8e",
+      "name": "Edit Fields",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    person_id,\n    names,\n    emails,\n    phones,\n    cities\nFROM people\nWHERE\n    (emails IS NOT NULL AND emails = $1)\n    OR\n    (phones IS NOT NULL AND phones = $2);",
+        "options": {
+          "queryReplacement": "={{ $json.email_normalized }} {{ $json.phone_normalized }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        848,
+        -48
+      ],
+      "id": "0991480e-4400-4638-adad-cc9bc21d66f3",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "aeIuaFsla8kEUOZQ",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        -224
+      ],
+      "id": "5f71a09a-2f1e-4836-8612-2e186e71f06a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        -16
+      ],
+      "id": "da66cc48-af17-4f18-b24e-3658d3e9df49",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0e159220-b362-43ab-9af8-de994bab5129",
+              "leftValue": "={{ $json.person_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        -272
+      ],
+      "id": "be7c141c-3990-4927-b7b4-58846071a006",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cf6591a-d787-41e0-97dd-ba6b9f506122",
+              "name": "alert_type",
+              "value": "DUPLICATE",
+              "type": "string"
+            },
+            {
+              "id": "990d2757-9b3f-4df8-83b2-b9584112e650",
+              "name": "candidate_name",
+              "value": "={{ $json[\"Full Name\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "ec69164a-e92a-4fb4-8f2e-0239e8073e25",
+              "name": "candidate_email",
+              "value": "={{ $json.email_normalized }}",
+              "type": "string"
+            },
+            {
+              "id": "f504fcfc-90d9-4f33-91a1-d3b207d8eac3",
+              "name": "candidate_phone",
+              "value": "={{ $json.phone_normalized }}",
+              "type": "string"
+            },
+            {
+              "id": "93cf6445-3764-4438-b805-4994945fc601",
+              "name": "matched_person_id",
+              "value": "={{ $json.person_id }}",
+              "type": "string"
+            },
+            {
+              "id": "280112f2-230e-4fd3-b6aa-92fd4dae4200",
+              "name": "matched_name",
+              "value": "={{ $json.names }}",
+              "type": "string"
+            },
+            {
+              "id": "de413950-4521-4aed-ba8a-9d6d2f5f59fd",
+              "name": "matched_email",
+              "value": "={{ $json.emails }}",
+              "type": "string"
+            },
+            {
+              "id": "6b350c58-9fb1-4317-8ef6-8b53747f36de",
+              "name": "matched_phone",
+              "value": "={{ $json.phones }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        -464
+      ],
+      "id": "20359191-bf14-4bb2-9bf5-95a61079eb14",
+      "name": "Duplicate alert"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8306b70-6788-47fa-aa75-665841999b07",
+              "name": "alert_type",
+              "value": "NEW_CANDIDATE",
+              "type": "string"
+            },
+            {
+              "id": "1cd5be97-ec06-4d98-a268-33fcf7182bc4",
+              "name": "candidate_name",
+              "value": "={{ $json[\"Full Name\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "5dda446b-c7d6-475e-89e6-b47d0a4b72aa",
+              "name": "candidate_email",
+              "value": "={{ $json.email_normalized }}",
+              "type": "string"
+            },
+            {
+              "id": "6c77be76-f62a-4675-b4de-40b769e36aa9",
+              "name": "candidate_phone",
+              "value": "={{ $json.phone_normalized }}",
+              "type": "string"
+            },
+            {
+              "id": "b4c461a5-bcf6-4bcf-9cda-7fcc4bdcf826",
+              "name": "message",
+              "value": "={{ `✅ NEW CANDIDATE  Candidate: ${$json[\"Full Name\"]} Email: ${$json.email_normalized} Phone: ${$json.phone_normalized ?? \"Not provided\"}  No matching person was found in the database.` }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1296,
+        -208
+      ],
+      "id": "a73243b8-1011-484f-a914-eafc09318b01",
+      "name": "Format New Candidate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1760,
+        -368
+      ],
+      "id": "e82a2cb3-0688-45c6-8610-60255c62827a",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst duplicates = items.filter(\n  item => item.json.alert_type === \"DUPLICATE\"\n);\n\nconst newCandidates = items.filter(\n  item => item.json.alert_type === \"NEW_CANDIDATE\"\n);\n\nreturn [\n  {\n    json: {\n      success: true,\n      total_candidates: items.length,\n      duplicates_found: duplicates.length,\n      new_candidates: newCandidates.length,\n\n      duplicates: duplicates.map(item => ({\n        candidate_name: item.json.candidate_name,\n        candidate_email: item.json.candidate_email,\n        candidate_phone: item.json.candidate_phone,\n        matched_person_id: item.json.matched_person_id,\n        matched_name: item.json.matched_name,\n        matched_email: item.json.matched_email,\n        matched_phone: item.json.matched_phone\n      })),\n\n      new_candidates: newCandidates.map(item => ({\n        candidate_name: item.json.candidate_name,\n        candidate_email: item.json.candidate_email,\n        candidate_phone: item.json.candidate_phone\n      }))\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        -368
+      ],
+      "id": "ec0d7fd1-8bbd-4293-be2b-a87576df88b7",
+      "name": "final_build"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2176,
+        -368
+      ],
+      "id": "64fef93c-5fe9-4674-b1bd-ebae8a741f19",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2ece39a6-066c-427e-82a3-ac684af803c9",
+              "leftValue": "={{ $json.duplicates_found }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2384,
+        -368
+      ],
+      "id": "857f30e4-dc1a-417b-840b-d13277745db3",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "swayamg741@gmail.com",
+        "toEmail": "simplicity741@gmail.com",
+        "subject": "Duplicate Candidates Detected",
+        "html": "=<h2>🚨 Duplicate Candidates Detected</h2>\n\n<p>\n<strong>Total candidates checked:</strong> {{ $json.total_candidates }}<br>\n<strong>Duplicates found:</strong> {{ $json.duplicates_found }}<br>\n<strong>New candidates:</strong> {{ $json.new_candidates.length }}\n</p>\n\n<hr>\n\n<h3>Duplicate Candidates</h3>\n\n{{ $json.duplicates.map((d, i) => `\n<div style=\"margin-bottom:20px;\">\n  <strong>${i + 1}. ${d.candidate_name}</strong><br>\n  Email: ${d.candidate_email}<br>\n  Phone: ${d.candidate_phone ?? \"Not provided\"}<br><br>\n\n  <strong>Matched Database Record</strong><br>\n  Person ID: ${d.matched_person_id}<br>\n  Name: ${d.matched_name}<br>\n  Email: ${d.matched_email}<br>\n  Phone: ${d.matched_phone ?? \"Not provided\"}\n</div>\n`).join(\"\") }}\n\n<hr>\n\n<p>Please review these candidates before adding them to the system.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2640,
+        -512
+      ],
+      "id": "90c7fa3b-11e1-41e4-ac52-4d81ae61a84e",
+      "name": "Send an Email",
+      "webhookId": "def4ddcb-10c8-4b3e-94d3-22be113cf8b1",
+      "credentials": {
+        "smtp": {
+          "id": "POTxdIQzhMwmnzY8",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Duplicate alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format New Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate alert": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format New Candidate": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "final_build",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final_build": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9c4b2bc2-c34d-42a8-8e2b-3c4d4183cff7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a8d0dae50008773f69aa18b59b0ec73554e71a579d79cf0f52c224033cc15246"
+  },
+  "id": "JOjW6EyjL0pEtvoB",
+  "tags": []
+}

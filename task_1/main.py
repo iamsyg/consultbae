@@ -1,3 +1,5 @@
+# task_1/main.py
+
 """Import the three normalized CSV sources into the Supabase people schema.
 
 Run with: python main.py
