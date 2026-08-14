@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Intake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#upload" aria-label="Audio intake home">
+          <span class="brand-mark">⌁</span>
+          <span>soundcheck</span>
+        </a>
+        <nav class="tabs" aria-label="Pages">
+          <button class="tab active" data-view="upload">New submission</button>
+          <button class="tab" data-view="submissions">All submissions <span id="countBadge">0</span></button>
+        </nav>
+      </header>
+
+      <section class="view active" id="uploadView">
+        <div class="hero-copy">
+          <p class="eyebrow">Audio intake portal</p>
+          <h1>Send us a<br /><em>sound.</em></h1>
+          <p>Upload a recording and we’ll prepare its technical details for review.</p>
+        </div>
+
+        <form id="uploadForm" class="upload-card">
+          <div class="form-grid">
+            <label>
+              <span>Your name</span>
+              <input type="text" id="name" placeholder="e.g. Priya Sharma" required />
+            </label>
+            <label>
+              <span>Phone number</span>
+              <input type="tel" id="phone" placeholder="e.g. +91 98765 43210" required />
+            </label>
+          </div>
+          <label class="drop-zone" id="dropZone" for="audioFile">
+            <input type="file" id="audioFile" accept="audio/*" required />
+            <span class="file-icon">↥</span>
+            <strong id="fileLabel">Drop audio here, or browse</strong>
+            <small id="fileHint">MP3, WAV, M4A or OGG</small>
+          </label>
+          <button class="primary-button" type="submit">Upload audio <span>→</span></button>
+        </form>
+
+        <section class="results" id="results" aria-live="polite">
+          <div class="results-heading"><span class="status-dot"></span> Extraction complete <span class="result-file" id="resultFile"></span></div>
+          <div class="metrics-grid" id="metricsGrid"></div>
+        </section>
+      </section>
+
+      <section class="view" id="submissionsView">
+        <div class="list-heading">
+          <div>
+            <p class="eyebrow">Archive</p>
+            <h2>All submissions</h2>
+          </div>
+          <p id="submissionSummary">No recordings uploaded yet.</p>
+        </div>
+        <div id="emptyState" class="empty-state">Your uploaded recordings will appear here.</div>
+        <div class="submission-list" id="submissionList"></div>
+      </section>
+    </main>
+    <template id="metricTemplate">
+      <article class="metric"><span class="metric-label"></span><strong class="metric-value"></strong></article>
+    </template>
+    <script src="script.js"></script>
+  </body>
+</html>
