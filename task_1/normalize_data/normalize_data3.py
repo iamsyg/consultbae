@@ -11,16 +11,12 @@ from features.projects_completed import find_projects_completed
 def normalize_data3(data):
 
     normalized_rows = []
-        
+
     for _, row in data.iterrows():
 
-        # Each person gets their own visited columns
         visited_columns = set()
 
-        # ----------------------------------------
         # PHONE
-        # ----------------------------------------
-
         phone, phone_source_column = find_phone(
             row,
             phone_column="Phone Number",
@@ -30,10 +26,7 @@ def normalize_data3(data):
         if phone_source_column is not None:
             visited_columns.add(phone_source_column)
 
-        # ----------------------------------------
         # CITY
-        # ----------------------------------------
-
         city, city_source_column = find_city(
             row,
             city_column="City",
@@ -43,10 +36,7 @@ def normalize_data3(data):
         if city_source_column is not None:
             visited_columns.add(city_source_column)
 
-        # ----------------------------------------
         # VERIFIED
-        # ----------------------------------------
-
         verified, verified_source_column = find_verified(
             row,
             verified_column="Verified",
@@ -56,11 +46,7 @@ def normalize_data3(data):
         if verified_source_column is not None:
             visited_columns.add(verified_source_column)
 
-
-        # ---------------------------------------
         # PROJECTS COMPLETED
-        # ----------------------------------------
-
         projects_completed, projects_source_column = find_projects_completed(
             row,
             project_column="Projects Completed",
@@ -69,12 +55,8 @@ def normalize_data3(data):
 
         if projects_source_column is not None:
             visited_columns.add(projects_source_column)
-        
 
-        # ----------------------------------------
         # NAME
-        # ----------------------------------------
-
         name, name_source_column = find_name(
             row,
             name_column="worker_name",
@@ -84,10 +66,6 @@ def normalize_data3(data):
         if name_source_column is not None:
             visited_columns.add(name_source_column)
 
-        # ----------------------------------------
-        # CREATE NORMALIZED ROW
-        # ----------------------------------------
-
         normalized_rows.append({
             "name": name,
             "phone": phone,
@@ -96,7 +74,15 @@ def normalize_data3(data):
             "projects_completed": projects_completed
         })
 
-    return pd.DataFrame(normalized_rows)
+    normalized = pd.DataFrame(normalized_rows)
 
-# cbnexus_contacts = normalize_data3(data3)
-# cbnexus_contacts.head(21)
+    # IMPORTANT:
+    # Keep Projects Completed as integer while allowing missing values
+    normalized["projects_completed"] = (
+        pd.to_numeric(
+            normalized["projects_completed"],
+            errors="coerce"
+        ).astype("Int64")
+    )
+
+    return normalized
