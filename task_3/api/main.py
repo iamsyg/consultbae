@@ -1,12 +1,14 @@
 # api/main.py
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException
 from api.db.db import get_connection
-from dotenv import load_dotenv
+
+from api.routes.audio_submission import router as audio_submission_router
 
 app = FastAPI()
-
-load_dotenv()
 
 
 def get_db():
@@ -34,3 +36,5 @@ def database_health(db=Depends(get_db)):
             status_code=500,
             detail=f"Database connection failed: {str(e)}"
         )
+
+app.include_router(audio_submission_router)
