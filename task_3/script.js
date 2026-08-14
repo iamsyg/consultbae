@@ -8,13 +8,6 @@ const metricsGrid = document.querySelector('#metricsGrid');
 const metricTemplate = document.querySelector('#metricTemplate');
 const submissions = [];
 
-const makeMetrics = () => ({
-
-  'Duration': `${Math.floor(Math.random() * 3) + 1}:${String(Math.floor(Math.random() * 59)).padStart(2, '0')}`,
-  'Sample rate': [44.1, 48, 96][Math.floor(Math.random() * 3)] + ' kHz',
-  'Bitrate': [128, 192, 256, 320][Math.floor(Math.random() * 4)] + ' kbps',
-  'Loudness': '-' + (Math.random() * 7 + 10).toFixed(1) + ' dB'
-});
 
 function displayMetrics(metrics) {
 
@@ -26,7 +19,7 @@ function displayMetrics(metrics) {
     item.querySelector('.metric-value').textContent = value;
     metricsGrid.append(item);
   });
-  
+
 }
 
 function chooseFile(file) {
@@ -48,22 +41,93 @@ dropZone.addEventListener('drop', event => {
   if (file && file.type.startsWith('audio/')) { fileInput.files = event.dataTransfer.files; chooseFile(file); }
 });
 
-form.addEventListener('submit', event => {
 
+
+form.addEventListener('submit', async event => {
   event.preventDefault();
+
   const file = fileInput.files[0];
+  const name = document.querySelector('#name').value.trim();
+  const phone = document.querySelector('#phone').value.trim();
 
-  if (!file) return;
-  
-  const metrics = makeMetrics();
-  const submission = { name: document.querySelector('#name').value, phone: document.querySelector('#phone').value, file, metrics, url: URL.createObjectURL(file) };
+  if (!name) {
+    alert('Please enter your name.');
+    return;
+  }
 
-  submissions.unshift(submission);
-  displayMetrics(metrics);
-  document.querySelector('#resultFile').textContent = file.name;
-  results.classList.add('visible');
-  renderSubmissions();
+  if (!phone) {
+    alert('Please enter your phone number.');
+    return;
+  }
+
+  if (!file) {
+    alert('Please select an audio file.');
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append('name', name);
+  formData.append('phone', phone);
+  formData.append('audio', file);
+
+  try {
+
+    const response = await fetch(
+      'http://127.0.0.1:8000/api/audio/submissions',
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Upload failed');
+    }
+
+    console.log('Submission created:', data);
+
+    const submission = {
+      name: data.person.name,
+      phone: data.person.phone,
+      fileName: file.name,
+      url: data.submission.audio_url,
+
+      metrics: {
+        'Duration': 'Processing...',
+        'Sample rate': 'Processing...',
+        'Bitrate': 'Processing...',
+        'Loudness': 'Processing...'
+      }
+    };
+
+    submissions.unshift(submission);
+
+    displayMetrics(submission.metrics);
+
+    document.querySelector('#resultFile').textContent = file.name;
+
+    results.classList.add('visible');
+
+    renderSubmissions();
+
+    form.reset();
+
+    fileLabel.textContent = 'Choose an audio file';
+    fileHint.textContent = 'MP3, WAV, M4A or other supported audio';
+
+  } catch (error) {
+
+    console.error('Upload error:', error);
+
+    alert(error.message);
+  }
 });
+
+
+
 
 function renderSubmissions() {
 
@@ -86,9 +150,10 @@ function renderSubmissions() {
 
     row.querySelector('.person-name').textContent = item.name;
     row.querySelector('.phone').textContent = item.phone;
-    row.querySelector('.submission-file').textContent = item.file.name;
+    row.querySelector('.submission-file').textContent = item.fileName;
 
     Object.entries(item.metrics).forEach(([key, value]) => { const tag = document.createElement('span'); tag.textContent = `${key}: ${value}`; row.querySelector('.submission-metrics').append(tag); });
+
     const audio = new Audio(item.url);
     const button = row.querySelector('.play-button');
 
