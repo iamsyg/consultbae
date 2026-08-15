@@ -96,10 +96,10 @@ form.addEventListener('submit', async event => {
       url: data.submission.audio_url,
 
       metrics: {
-        'Duration': 'Processing...',
-        'Sample rate': 'Processing...',
-        'Bitrate': 'Processing...',
-        'Loudness': 'Processing...'
+        'Duration': `${data.submission.duration_seconds.toFixed(2)} sec`,
+        'Sample rate': `${data.submission.sample_rate_khz} kHz`,
+        'Bitrate': `${data.submission.bitrate_kbps} kbps`,
+        'Loudness': `${data.submission.loudness_db} LUFS`
       }
     };
 

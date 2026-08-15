@@ -7,6 +7,8 @@ from fastapi import HTTPException, UploadFile
 from api.utils.supabase import supabase
 import cloudinary.uploader
 
+from api.services.audio_analysis import analyze_audio
+
 
 def get_last_10_digits(phone: str) -> str:
     """
@@ -70,6 +72,8 @@ def create_audio_submission(
             status_code=400,
             detail="Audio file is required"
         )
+
+    metrics = analyze_audio(audio)
 
     # -----------------------------------------
     # 3. Get last 10 digits from incoming phone
@@ -163,6 +167,8 @@ def create_audio_submission(
 
     try:
 
+        audio.file.seek(0)
+
         upload_result = cloudinary.uploader.upload(
             audio.file,
             resource_type="video",
@@ -192,7 +198,12 @@ def create_audio_submission(
             .insert({
                 "person_id": person_id,
                 "audio_url": audio_url,
-                "cloudinary_public_id": cloudinary_public_id
+                "cloudinary_public_id": cloudinary_public_id,
+
+                "duration_seconds": metrics["duration_seconds"],
+                "sample_rate_khz": metrics["sample_rate_khz"],
+                "bitrate_kbps": metrics["bitrate_kbps"],
+                "loudness_db": metrics["loudness_db"]
             })
             .execute()
         )
@@ -255,6 +266,12 @@ def create_audio_submission(
             "cloudinary_public_id": submission[
                 "cloudinary_public_id"
             ],
+
+            "duration_seconds": submission["duration_seconds"],
+            "sample_rate_khz": submission["sample_rate_khz"],
+            "bitrate_kbps": submission["bitrate_kbps"],
+            "loudness_db": submission["loudness_db"],
+
             "created_at": submission.get("created_at")
         }
     }
