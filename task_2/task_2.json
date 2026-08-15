@@ -311,7 +311,7 @@
             {
               "id": "2ece39a6-066c-427e-82a3-ac684af803c9",
               "leftValue": "={{ $json.duplicates_found }}",
-              "rightValue": 0,
+              "rightValue": "={{ 0 }}",
               "operator": {
                 "type": "number",
                 "operation": "gt"
@@ -526,7 +526,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "9c4b2bc2-c34d-42a8-8e2b-3c4d4183cff7",
+  "versionId": "802a7770-5b9d-4145-b77e-b0142830a01b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a8d0dae50008773f69aa18b59b0ec73554e71a579d79cf0f52c224033cc15246"
