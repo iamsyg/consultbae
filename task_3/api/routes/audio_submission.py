@@ -3,6 +3,7 @@
 from fastapi import APIRouter, File, Form, UploadFile
 
 from api.controllers.audio_submission_controller import create_audio_submission
+from api.controllers.get_all_submissions import get_all_submissions
 
 
 router = APIRouter(
@@ -22,3 +23,10 @@ def submit_audio(
         phone=phone,
         audio=audio
     )
+
+
+
+@router.get("")
+def list_submissions():
+
+    return get_all_submissions()

@@ -22,6 +22,72 @@ function displayMetrics(metrics) {
 
 }
 
+async function loadSubmissions() {
+  try {
+    const response = await fetch(
+      'http://127.0.0.1:8000/api/audio'
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || 'Failed to load submissions'
+      );
+    }
+
+    submissions.length = 0;
+
+    data.submissions.forEach(item => {
+
+      submissions.push({
+        id: item.submission_id,
+
+        name: item.name || 'Unknown',
+        phone: item.phone || 'N/A',
+
+        fileName: item.file_name || 'Audio recording',
+
+        url: item.audio_url,
+
+        metrics: {
+          'Duration':
+            item.duration_seconds != null
+              ? `${Number(item.duration_seconds).toFixed(2)} sec`
+              : 'N/A',
+
+          'Sample rate':
+            item.sample_rate_khz != null
+              ? `${item.sample_rate_khz} kHz`
+              : 'N/A',
+
+          'Bitrate':
+            item.bitrate_kbps != null
+              ? `${item.bitrate_kbps} kbps`
+              : 'N/A',
+
+          'Loudness':
+            item.loudness_db != null
+              ? `${item.loudness_db} LUFS`
+              : 'N/A'
+        }
+      });
+
+    });
+
+    renderSubmissions();
+
+  } catch (error) {
+
+    console.error(
+      'Failed to load submissions:',
+      error
+    );
+
+    alert(error.message);
+  }
+}
+
 function chooseFile(file) {
 
   if (!file) return;
@@ -83,6 +149,8 @@ form.addEventListener('submit', async event => {
 
     const data = await response.json();
 
+     console.log("API response:", data);
+
     if (!response.ok) {
       throw new Error(data.detail || 'Upload failed');
     }
@@ -103,15 +171,11 @@ form.addEventListener('submit', async event => {
       }
     };
 
-    submissions.unshift(submission);
-
     displayMetrics(submission.metrics);
 
     document.querySelector('#resultFile').textContent = file.name;
 
     results.classList.add('visible');
-
-    renderSubmissions();
 
     form.reset();
 
@@ -165,9 +229,35 @@ function renderSubmissions() {
   });
 }
 
-document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+// document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
 
-  document.querySelectorAll('.tab,.view').forEach(el => el.classList.remove('active'));
-  tab.classList.add('active');
-  document.querySelector(`#${tab.dataset.view}View`).classList.add('active');
-}));
+//   document.querySelectorAll('.tab,.view').forEach(el => el.classList.remove('active'));
+//   tab.classList.add('active');
+//   document.querySelector(`#${tab.dataset.view}View`).classList.add('active');
+// }));
+
+
+
+document.querySelectorAll('.tab').forEach(tab => {
+
+  tab.addEventListener('click', async () => {
+
+    document
+      .querySelectorAll('.tab,.view')
+      .forEach(el => el.classList.remove('active'));
+
+    tab.classList.add('active');
+
+    document
+      .querySelector(`#${tab.dataset.view}View`)
+      .classList.add('active');
+
+    // Fetch latest submissions when
+    // "All submissions" is clicked
+    if (tab.dataset.view === 'submissions') {
+      await loadSubmissions();
+    }
+
+  });
+
+});
